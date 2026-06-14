@@ -310,10 +310,9 @@ const RUSHBAG_SETS = {
  */
 function generateMenu(level, style) {
   const baseTemplate = LEVEL_TEMPLATES[level];
-  const hasCooldown = baseTemplate.includes("cooldown");
-  const template = baseTemplate.filter((p) => p !== "cooldown");
-  const coreIndex = template.indexOf("core");
-  template.splice(coreIndex, 0, ...(hasCooldown ? ["rushbag", "cooldown"] : ["rushbag"]));
+  const coreIndex = baseTemplate.indexOf("core");
+  const template = [...baseTemplate];
+  template.splice(coreIndex, 0, "rushbag");
 
   const counters = {}; // フェーズごとの出現回数カウンタ(内容ローテーション用)
   const isBeginner = level === "beginner1" || level === "beginner2" || level === "beginner3";
