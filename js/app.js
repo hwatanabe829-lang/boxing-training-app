@@ -19,6 +19,10 @@ function beep(freq = 880, duration = 0.2) {
 
 let currentMenu = null;
 
+function rowIdFor(round) {
+  return round.phase === "rushbag" ? "rushbag-row" : `round-row-${round.round}`;
+}
+
 function renderMenu(menu, level, style) {
   const container = document.getElementById("menuResult");
   container.innerHTML = "";
@@ -37,9 +41,12 @@ function renderMenu(menu, level, style) {
   const tbody = document.createElement("tbody");
   menu.rounds.forEach(r => {
     const tr = document.createElement("tr");
-    tr.id = `round-row-${r.round}`;
+    tr.id = rowIdFor(r);
+    if (r.phase === "rushbag") {
+      tr.classList.add("rushbag-row");
+    }
     tr.innerHTML = `
-      <td>${r.round}</td>
+      <td>${r.phase === "rushbag" ? "🥊" : r.round}</td>
       <td>${r.phaseName}</td>
       <td>${r.content}</td>
       <td>${r.duration}</td>
@@ -52,17 +59,6 @@ function renderMenu(menu, level, style) {
   tableWrap.className = "menu-table-wrap";
   tableWrap.appendChild(table);
   container.appendChild(tableWrap);
-
-  // ラッシュバッグ
-  const rushBox = document.createElement("div");
-  rushBox.className = "rushbag-box";
-  rushBox.id = "rushbag-box";
-  rushBox.innerHTML = `
-    <h3>🥊 ラッシュバッグ(全ラウンド終了後)</h3>
-    <p>サンドバッグを<strong>30秒交代</strong>で全力連打します。全${menu.rushbagSets}セット(計${menu.rushbagSets * 0.5}分)。</p>
-    <p>2人で行う場合は30秒ごとに交代。1人で行う場合は「全力30秒→流す30秒」を繰り返してください。</p>
-  `;
-  container.appendChild(rushBox);
 
   document.getElementById("timerSection").style.display = "block";
   document.getElementById("startTimerBtn").disabled = false;
@@ -81,18 +77,51 @@ const WORK_SEC = 2 * 60;
 const REST_SEC = 30;
 const RUSH_SEC = 30;
 
-let timerState = null; // {phase: 'work'|'rest'|'rush', index, remaining}
+let timerSteps = null; // 平坦化したステップ配列
+let stepIndex = 0;
+let remaining = 0;
 let timerInterval = null;
+
+/**
+ * メニューからタイマーのステップ列を組み立てる。
+ * 各ラウンドの後(最後を除く)に休憩を挟み、ラッシュバッグはセット数分の
+ * 30秒ステップに展開する。
+ */
+function buildSteps(menu) {
+  const steps = [];
+  menu.rounds.forEach((r, i) => {
+    if (r.phase === "rushbag") {
+      for (let s = 1; s <= r.rushbagSets; s++) {
+        steps.push({
+          type: "rush",
+          round: r,
+          set: s,
+          totalSets: r.rushbagSets,
+          duration: RUSH_SEC
+        });
+      }
+    } else {
+      steps.push({ type: "work", round: r, duration: WORK_SEC });
+    }
+
+    if (i < menu.rounds.length - 1) {
+      steps.push({ type: "rest", duration: REST_SEC });
+    }
+  });
+  return steps;
+}
 
 function resetTimerState() {
   clearInterval(timerInterval);
   timerInterval = null;
-  timerState = null;
+  timerSteps = null;
+  stepIndex = 0;
+  remaining = 0;
   document.getElementById("timerDisplay").textContent = "--:--";
   document.getElementById("timerLabel").textContent = "準備中";
   document.getElementById("startTimerBtn").textContent = "開始";
+  document.getElementById("startTimerBtn").disabled = !currentMenu;
   document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
-  document.getElementById("rushbag-box")?.classList.remove("active-round");
 }
 
 function formatTime(sec) {
@@ -112,8 +141,10 @@ function startTimer() {
     return;
   }
 
-  if (!timerState) {
-    timerState = { phase: "work", index: 0, remaining: WORK_SEC };
+  if (!timerSteps) {
+    timerSteps = buildSteps(currentMenu);
+    stepIndex = 0;
+    remaining = timerSteps[0].duration;
     updateTimerDisplay();
   }
 
@@ -122,73 +153,53 @@ function startTimer() {
 }
 
 function tick() {
-  timerState.remaining -= 1;
+  remaining -= 1;
 
-  if (timerState.remaining < 0) {
-    advancePhase();
+  if (remaining < 0) {
+    advanceStep();
     return;
   }
 
-  if (timerState.remaining === 0) {
-    beep(timerState.phase === "rest" ? 660 : 990, 0.3);
+  if (remaining === 0) {
+    const step = timerSteps[stepIndex];
+    beep(step.type === "rest" ? 660 : 990, 0.3);
   }
 
   updateTimerDisplay();
 }
 
-function advancePhase() {
-  const totalRounds = currentMenu.rounds.length;
-
-  if (timerState.phase === "work") {
-    if (timerState.index < totalRounds - 1) {
-      timerState.phase = "rest";
-      timerState.remaining = REST_SEC;
-    } else {
-      // 全ラウンド終了 → ラッシュバッグへ
-      timerState.phase = "rush";
-      timerState.index = 0;
-      timerState.remaining = RUSH_SEC;
-    }
-  } else if (timerState.phase === "rest") {
-    timerState.index += 1;
-    timerState.phase = "work";
-    timerState.remaining = WORK_SEC;
-  } else if (timerState.phase === "rush") {
-    if (timerState.index < currentMenu.rushbagSets - 1) {
-      timerState.index += 1;
-      timerState.remaining = RUSH_SEC;
-    } else {
-      // 終了
-      clearInterval(timerInterval);
-      timerInterval = null;
-      document.getElementById("timerLabel").textContent = "トレーニング終了！お疲れ様でした 🥊";
-      document.getElementById("timerDisplay").textContent = "00:00";
-      document.getElementById("startTimerBtn").disabled = true;
-      document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
-      document.getElementById("rushbag-box")?.classList.remove("active-round");
-      return;
-    }
+function advanceStep() {
+  if (stepIndex < timerSteps.length - 1) {
+    stepIndex += 1;
+    remaining = timerSteps[stepIndex].duration;
+    beep(1200, 0.4);
+    updateTimerDisplay();
+  } else {
+    // 終了
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById("timerLabel").textContent = "トレーニング終了！お疲れ様でした 🥊";
+    document.getElementById("timerDisplay").textContent = "00:00";
+    document.getElementById("startTimerBtn").disabled = true;
+    document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
   }
-
-  beep(1200, 0.4);
-  updateTimerDisplay();
 }
 
 function updateTimerDisplay() {
-  document.getElementById("timerDisplay").textContent = formatTime(timerState.remaining);
+  const step = timerSteps[stepIndex];
+  document.getElementById("timerDisplay").textContent = formatTime(remaining);
 
   document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
-  document.getElementById("rushbag-box")?.classList.remove("active-round");
 
-  if (timerState.phase === "work") {
-    const r = currentMenu.rounds[timerState.index];
+  if (step.type === "work") {
+    const r = step.round;
     document.getElementById("timerLabel").textContent = `第${r.round}ラウンド: ${r.phaseName}`;
-    document.getElementById(`round-row-${r.round}`)?.classList.add("active-round");
-  } else if (timerState.phase === "rest") {
+    document.getElementById(rowIdFor(r))?.classList.add("active-round");
+  } else if (step.type === "rest") {
     document.getElementById("timerLabel").textContent = "休憩";
-  } else if (timerState.phase === "rush") {
-    document.getElementById("timerLabel").textContent = `ラッシュバッグ ${timerState.index + 1}/${currentMenu.rushbagSets}セット目`;
-    document.getElementById("rushbag-box")?.classList.add("active-round");
+  } else if (step.type === "rush") {
+    document.getElementById("timerLabel").textContent = `ラッシュバッグ ${step.set}/${step.totalSets}セット目`;
+    document.getElementById(rowIdFor(step.round))?.classList.add("active-round");
   }
 }
 

@@ -206,6 +206,11 @@ const PHASE_CONTENT = {
       `スパーリング:実践的なコンビネーションと駆け引きを意識する。${SAFETY_NOTE_SPAR}`
     ]
   },
+  rushbag: {
+    common: [
+      "サンドバッグを30秒交代で全力連打。2人の場合は30秒ごとに交代、1人の場合は「全力30秒→流す30秒」を繰り返す"
+    ]
+  },
   core: {
     common: [
       "腹筋・体幹トレーニング(プランク、ツイストなど)で軸を強化",
@@ -230,6 +235,7 @@ const PHASE_NAMES = {
   counterreturn: "パンチの受け返し",
   massboxing: "マスボクシング",
   sparring: "スパーリング",
+  rushbag: "ラッシュバッグ",
   core: "コンディショニング",
   cooldown: "クールダウン"
 };
@@ -299,14 +305,32 @@ const RUSHBAG_SETS = {
 };
 
 /**
- * レベル・スタイルから20ラウンド分のメニューを生成する
+ * レベル・スタイルから20ラウンド分のメニュー(+ラッシュバッグ)を生成する
+ * ラッシュバッグはコンディショニング(core)の直前に配置される
  */
 function generateMenu(level, style) {
-  const template = LEVEL_TEMPLATES[level];
+  const baseTemplate = LEVEL_TEMPLATES[level];
+  const coreIndex = baseTemplate.indexOf("core");
+  const template = [...baseTemplate];
+  template.splice(coreIndex, 0, "rushbag");
+
   const counters = {}; // フェーズごとの出現回数カウンタ(内容ローテーション用)
   const isBeginner = level === "beginner1" || level === "beginner2" || level === "beginner3";
+  const rushbagSets = RUSHBAG_SETS[level];
 
-  const rounds = template.map((phase, index) => {
+  let roundNumber = 0;
+  const rounds = template.map((phase) => {
+    if (phase === "rushbag") {
+      return {
+        round: null,
+        phase: "rushbag",
+        phaseName: PHASE_NAMES.rushbag,
+        content: PHASE_CONTENT.rushbag.common[0],
+        duration: `30秒×${rushbagSets}セット`,
+        rushbagSets: rushbagSets
+      };
+    }
+
     const count = counters[phase] || 0;
     counters[phase] = count + 1;
 
@@ -323,8 +347,10 @@ function generateMenu(level, style) {
 
     const content = contentSet[count % contentSet.length];
 
+    roundNumber += 1;
     return {
-      round: index + 1,
+      round: roundNumber,
+      phase: phase,
       phaseName: PHASE_NAMES[phase],
       content: content,
       duration: "2分(休憩30秒)"
@@ -333,6 +359,6 @@ function generateMenu(level, style) {
 
   return {
     rounds: rounds,
-    rushbagSets: RUSHBAG_SETS[level]
+    rushbagSets: rushbagSets
   };
 }

@@ -104,15 +104,14 @@ main {
   color: #fff;
 }
 
-.rushbag-box {
-  margin-top: 20px;
-  background: #2a2a2a;
-  border: 2px solid #c0392b;
-  border-radius: 8px;
-  padding: 16px;
+.menu-table tr.rushbag-row {
+  background: #3a2a1a;
+  border-top: 2px solid #c0392b;
+  border-bottom: 2px solid #c0392b;
+  font-weight: bold;
 }
 
-.rushbag-box.active-round {
+.menu-table tr.rushbag-row.active-round {
   background: #c0392b;
 }
 
