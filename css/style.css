@@ -1,0 +1,191 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  background: #1a1a1a;
+  color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #c0392b, #8e1f12);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.selector-card {
+  background: #2a2a2a;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.selector-card label {
+  font-weight: bold;
+}
+
+.selector-card select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.selector-card button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #c0392b;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.selector-card button:hover {
+  background: #e74c3c;
+}
+
+.menu-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.menu-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.menu-table th, .menu-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid #3a3a3a;
+  font-size: 0.9rem;
+}
+
+.menu-table td:nth-child(3) {
+  min-width: 220px;
+}
+
+.menu-table th {
+  background: #3a3a3a;
+}
+
+.menu-table tr.active-round {
+  background: #c0392b;
+  color: #fff;
+}
+
+.rushbag-box {
+  margin-top: 20px;
+  background: #2a2a2a;
+  border: 2px solid #c0392b;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.rushbag-box.active-round {
+  background: #c0392b;
+}
+
+.timer-section {
+  margin-top: 24px;
+  background: #2a2a2a;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.timer-display {
+  font-size: 3rem;
+  font-weight: bold;
+  font-family: monospace;
+  margin: 10px 0;
+}
+
+.timer-label {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  min-height: 1.4em;
+}
+
+.timer-controls button {
+  padding: 10px 24px;
+  margin: 0 6px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#startTimerBtn {
+  background: #27ae60;
+  color: #fff;
+}
+
+#resetTimerBtn {
+  background: #555;
+  color: #fff;
+}
+
+.safety-note {
+  font-size: 0.85rem;
+  color: #f1c40f;
+}
+
+@media (max-width: 480px) {
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+
+  main {
+    padding: 12px;
+  }
+
+  .menu-table th, .menu-table td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+  }
+
+  .menu-table td:nth-child(3) {
+    min-width: 160px;
+  }
+
+  .timer-display {
+    font-size: 2.4rem;
+  }
+
+  .timer-controls button {
+    padding: 10px 16px;
+    font-size: 0.95rem;
+  }
+}
