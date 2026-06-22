@@ -235,15 +235,15 @@ function startTimer() {
 function tick() {
   remaining -= 1;
 
-  if (remaining < 0) {
+  if (remaining <= 0) {
+    // カウントが0になった瞬間にゴングを鳴らしてステップ移行
     advanceStep();
     return;
   }
 
-  if (remaining === 0) {
-    const step = timerSteps[stepIndex];
-    // ラウンド終了・インターバル終了の直前ビープ
-    beep(step.type === "rest" ? 660 : 990, 0.3);
+  // 残り3秒はカウントダウンビープ
+  if (remaining <= 3) {
+    beep(880, 0.15);
   }
 
   updateTimerDisplay();
