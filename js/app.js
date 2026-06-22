@@ -6,42 +6,58 @@ function getAudioCtx() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
   return audioCtx;
 }
 
 function beep(freq = 880, duration = 0.2) {
   const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.frequency.value = freq;
-  osc.type = "sine";
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  gain.gain.setValueAtTime(0.3, ctx.currentTime);
-  osc.start();
-  osc.stop(ctx.currentTime + duration);
+  const play = () => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    osc.type = "sine";
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  };
+  if (ctx.state === "running") {
+    play();
+  } else {
+    ctx.resume().then(play);
+  }
 }
 
 // ゴング音:低音の鐘をシミュレート
 function gong() {
   const ctx = getAudioCtx();
-  const now = ctx.currentTime;
-
-  // 基音と倍音を重ねてゴングらしさを出す
-  const frequencies = [110, 220, 330, 440, 660];
-  frequencies.forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    const vol = 0.25 / (i + 1);
-    gain.gain.setValueAtTime(vol, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
-    osc.start(now);
-    osc.stop(now + 2.5);
-  });
+  const play = () => {
+    const now = ctx.currentTime;
+    const frequencies = [110, 220, 330, 440, 660];
+    frequencies.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const vol = 0.3 / (i + 1);
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+      osc.start(now);
+      osc.stop(now + 2.6);
+    });
+  };
+  if (ctx.state === "running") {
+    play();
+  } else {
+    ctx.resume().then(play);
+  }
 }
 
 // 音声で次ラウンドの内容をアナウンス
@@ -50,7 +66,11 @@ function announce(text) {
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "ja-JP";
-  utter.rate = 0.95;
+  utter.rate = 0.9;
+  // 日本語音声を優先して選択
+  const voices = window.speechSynthesis.getVoices();
+  const jaVoice = voices.find(v => v.lang.startsWith("ja"));
+  if (jaVoice) utter.voice = jaVoice;
   window.speechSynthesis.speak(utter);
 }
 
