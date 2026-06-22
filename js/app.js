@@ -329,15 +329,19 @@ function advanceStep() {
     const curStep = timerSteps[stepIndex];
 
     if (curStep.type === "rest") {
-      // インターバル開始 = 前ラウンド終了ゴング + 次ラウンド内容をアナウンス
+      // インターバル開始ゴング
       gong();
-      const msg = buildNextAnnounce(stepIndex + 1);
-      if (msg) {
-        setTimeout(() => announce(`インターバル。次は、${msg}`), 1500);
-      }
-    } else {
-      // ラウンド開始ゴング
+    } else if (curStep.type === "work") {
+      // ラウンド開始ゴング + 内容を読み上げ
       gong();
+      const r = curStep.round;
+      const content = toSpeechText(r.content);
+      setTimeout(() => announce(`${r.round}ラウンド。${r.phaseName}。${content}`), 1000);
+    } else if (curStep.type === "rush") {
+      // ラッシュバッグ開始ゴング + 内容を読み上げ
+      gong();
+      const content = toSpeechText(curStep.round.content);
+      setTimeout(() => announce(`ラッシュバッグ。${content}`), 1000);
     }
 
     updateTimerDisplay();
