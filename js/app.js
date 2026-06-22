@@ -301,13 +301,15 @@ function tick() {
   updateTimerDisplay();
 }
 
-// 読み上げ用に記号・括弧・注意書きを除去して自然な文にする
+// 読み上げ用に記号だけ整えて自然な文にする(括弧内は残す)
 function toSpeechText(str) {
   return str
-    .replace(/※[^。]*/g, "")          // ※以降の注意書きを除去
-    .replace(/[（(][^）)]*[）)]/g, "") // 括弧内を除去
-    .replace(/[:：]/g, "、")           // コロンを読点に
+    .replace(/※.*/g, "")          // ※以降の安全注意書きのみ除去
+    .replace(/[（(]/g, "、")       // 括弧を読点に置換して内容は読む
+    .replace(/[）)]/g, "。")
+    .replace(/[:：]/g, "、")
     .replace(/[①②③④⑤]/g, "")
+    .replace(/[→]/g, "から")
     .replace(/\s+/g, " ")
     .trim();
 }
