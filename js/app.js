@@ -2,19 +2,56 @@
 
 let audioCtx = null;
 
-function beep(freq = 880, duration = 0.2) {
+function getAudioCtx() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+  return audioCtx;
+}
+
+function beep(freq = 880, duration = 0.2) {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
   osc.frequency.value = freq;
   osc.type = "sine";
   osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.3, ctx.currentTime);
   osc.start();
-  osc.stop(audioCtx.currentTime + duration);
+  osc.stop(ctx.currentTime + duration);
+}
+
+// ゴング音:低音の鐘をシミュレート
+function gong() {
+  const ctx = getAudioCtx();
+  const now = ctx.currentTime;
+
+  // 基音と倍音を重ねてゴングらしさを出す
+  const frequencies = [110, 220, 330, 440, 660];
+  frequencies.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const vol = 0.25 / (i + 1);
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+    osc.start(now);
+    osc.stop(now + 2.5);
+  });
+}
+
+// 音声で次ラウンドの内容をアナウンス
+function announce(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "ja-JP";
+  utter.rate = 0.95;
+  window.speechSynthesis.speak(utter);
 }
 
 let currentMenu = null;
@@ -145,6 +182,14 @@ function startTimer() {
     timerSteps = buildSteps(currentMenu);
     stepIndex = 0;
     remaining = timerSteps[0].duration;
+    // 最初のラウンド開始ゴング+アナウンス
+    gong();
+    const first = timerSteps[0];
+    if (first.type === "work") {
+      setTimeout(() => announce(`第${first.round.round}ラウンド、${first.round.phaseName}。${first.round.content}`), 1500);
+    } else if (first.type === "rush") {
+      setTimeout(() => announce(`ラッシュバッグ、${first.totalSets}セット。${first.round.content}`), 1500);
+    }
     updateTimerDisplay();
   }
 
@@ -162,20 +207,50 @@ function tick() {
 
   if (remaining === 0) {
     const step = timerSteps[stepIndex];
+    // ラウンド終了・インターバル終了の直前ビープ
     beep(step.type === "rest" ? 660 : 990, 0.3);
   }
 
   updateTimerDisplay();
 }
 
+// 次のworkまたはrushステップを先読みしてアナウンス文を作る
+function buildNextAnnounce(nextIndex) {
+  for (let i = nextIndex; i < timerSteps.length; i++) {
+    const s = timerSteps[i];
+    if (s.type === "work") {
+      return `第${s.round.round}ラウンド、${s.round.phaseName}。${s.round.content}`;
+    }
+    if (s.type === "rush") {
+      return `ラッシュバッグ、${s.totalSets}セット。${s.round.content}`;
+    }
+  }
+  return null;
+}
+
 function advanceStep() {
   if (stepIndex < timerSteps.length - 1) {
+    const prevStep = timerSteps[stepIndex];
     stepIndex += 1;
     remaining = timerSteps[stepIndex].duration;
-    beep(1200, 0.4);
+    const curStep = timerSteps[stepIndex];
+
+    if (curStep.type === "rest") {
+      // インターバル開始 = 前ラウンド終了ゴング + 次ラウンド内容をアナウンス
+      gong();
+      const msg = buildNextAnnounce(stepIndex + 1);
+      if (msg) {
+        setTimeout(() => announce(`インターバル。次は、${msg}`), 1500);
+      }
+    } else {
+      // ラウンド開始ゴング
+      gong();
+    }
+
     updateTimerDisplay();
   } else {
-    // 終了
+    // 全終了
+    gong();
     clearInterval(timerInterval);
     timerInterval = null;
     document.getElementById("timerLabel").textContent = "トレーニング終了！お疲れ様でした 🥊";
