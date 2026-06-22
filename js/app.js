@@ -264,9 +264,11 @@ function startTimer() {
     gong();
     const first = timerSteps[0];
     if (first.type === "work") {
-      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}`), 1500);
+      const content = toSpeechText(first.round.content);
+      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`), 1500);
     } else if (first.type === "rush") {
-      setTimeout(() => announce(`ラッシュバッグ`), 1500);
+      const content = toSpeechText(first.round.content);
+      setTimeout(() => announce(`ラッシュバッグ。${content}`), 1500);
     }
     updateTimerDisplay();
   }
@@ -292,15 +294,28 @@ function tick() {
   updateTimerDisplay();
 }
 
-// 次のworkまたはrushステップを先読みしてアナウンス文を作る(短め)
+// 読み上げ用に記号・括弧・注意書きを除去して自然な文にする
+function toSpeechText(str) {
+  return str
+    .replace(/※[^。]*/g, "")          // ※以降の注意書きを除去
+    .replace(/[（(][^）)]*[）)]/g, "") // 括弧内を除去
+    .replace(/[:：]/g, "、")           // コロンを読点に
+    .replace(/[①②③④⑤]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// 次のworkまたはrushステップを先読みしてアナウンス文を作る
 function buildNextAnnounce(nextIndex) {
   for (let i = nextIndex; i < timerSteps.length; i++) {
     const s = timerSteps[i];
     if (s.type === "work") {
-      return `次、${s.round.round}ラウンド。${s.round.phaseName}`;
+      const content = toSpeechText(s.round.content);
+      return `次、${s.round.round}ラウンド。${s.round.phaseName}。${content}`;
     }
     if (s.type === "rush") {
-      return `次、ラッシュバッグ`;
+      const content = toSpeechText(s.round.content);
+      return `次、ラッシュバッグ。${content}`;
     }
   }
   return null;
