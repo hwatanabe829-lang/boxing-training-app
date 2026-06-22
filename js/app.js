@@ -248,6 +248,13 @@ function formatTime(sec) {
 function startTimer() {
   if (!currentMenu) return;
 
+  // iOSはユーザー操作内でspeechSynthesisを一度呼ばないと以降が動かない
+  if (window.speechSynthesis) {
+    const unlock = new SpeechSynthesisUtterance(" ");
+    unlock.volume = 0;
+    window.speechSynthesis.speak(unlock);
+  }
+
   if (timerInterval) {
     // 一時停止
     clearInterval(timerInterval);
