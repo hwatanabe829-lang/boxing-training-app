@@ -329,8 +329,12 @@ function advanceStep() {
     const curStep = timerSteps[stepIndex];
 
     if (curStep.type === "rest") {
-      // インターバル開始ゴング
+      // インターバル開始ゴング + 次ラウンド内容を予告
       gong();
+      const msg = buildNextAnnounce(stepIndex + 1);
+      if (msg) {
+        setTimeout(() => announce(`インターバル。次は、${msg}`), 1500);
+      }
     } else if (curStep.type === "work") {
       // ラウンド開始ゴング + 内容を読み上げ
       gong();
