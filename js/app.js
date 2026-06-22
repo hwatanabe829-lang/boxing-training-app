@@ -33,24 +33,38 @@ function beep(freq = 880, duration = 0.2) {
   }
 }
 
-// ゴング音:低音の鐘をシミュレート
+// ボクシングベル音:金属的な響きを重ねて大きめに鳴らす
 function gong() {
   const ctx = getAudioCtx();
   const play = () => {
     const now = ctx.currentTime;
-    const frequencies = [110, 220, 330, 440, 660];
-    frequencies.forEach((freq, i) => {
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(1.0, now);
+    master.connect(ctx.destination);
+
+    // ベル基音 + 金属倍音(非整数比でリアルな金属感)
+    const partials = [
+      { freq: 420, vol: 1.0, decay: 3.5 },
+      { freq: 630, vol: 0.7, decay: 2.8 },
+      { freq: 840, vol: 0.5, decay: 2.2 },
+      { freq: 1050, vol: 0.35, decay: 1.8 },
+      { freq: 1680, vol: 0.2, decay: 1.2 },
+      { freq: 2520, vol: 0.1, decay: 0.8 },
+    ];
+
+    partials.forEach(({ freq, vol, decay }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
       osc.connect(gain);
-      gain.connect(ctx.destination);
-      const vol = 0.3 / (i + 1);
-      gain.gain.setValueAtTime(vol, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+      gain.connect(master);
+      // 瞬間的に立ち上がり、ゆっくり減衰
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(vol, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
       osc.start(now);
-      osc.stop(now + 2.6);
+      osc.stop(now + decay + 0.1);
     });
   };
   if (ctx.state === "running") {
@@ -60,16 +74,17 @@ function gong() {
   }
 }
 
-// 音声で次ラウンドの内容をアナウンス
+// 音声アナウンス:短い言葉で自然に
 function announce(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "ja-JP";
-  utter.rate = 0.9;
-  // 日本語音声を優先して選択
+  utter.rate = 0.85;
+  utter.pitch = 1.05;
   const voices = window.speechSynthesis.getVoices();
-  const jaVoice = voices.find(v => v.lang.startsWith("ja"));
+  const jaVoice = voices.find(v => v.lang.startsWith("ja") && !v.name.includes("Google"))
+                 || voices.find(v => v.lang.startsWith("ja"));
   if (jaVoice) utter.voice = jaVoice;
   window.speechSynthesis.speak(utter);
 }
@@ -206,9 +221,9 @@ function startTimer() {
     gong();
     const first = timerSteps[0];
     if (first.type === "work") {
-      setTimeout(() => announce(`第${first.round.round}ラウンド、${first.round.phaseName}。${first.round.content}`), 1500);
+      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}`), 1500);
     } else if (first.type === "rush") {
-      setTimeout(() => announce(`ラッシュバッグ、${first.totalSets}セット。${first.round.content}`), 1500);
+      setTimeout(() => announce(`ラッシュバッグ`), 1500);
     }
     updateTimerDisplay();
   }
@@ -234,15 +249,15 @@ function tick() {
   updateTimerDisplay();
 }
 
-// 次のworkまたはrushステップを先読みしてアナウンス文を作る
+// 次のworkまたはrushステップを先読みしてアナウンス文を作る(短め)
 function buildNextAnnounce(nextIndex) {
   for (let i = nextIndex; i < timerSteps.length; i++) {
     const s = timerSteps[i];
     if (s.type === "work") {
-      return `第${s.round.round}ラウンド、${s.round.phaseName}。${s.round.content}`;
+      return `次、${s.round.round}ラウンド。${s.round.phaseName}`;
     }
     if (s.type === "rush") {
-      return `ラッシュバッグ、${s.totalSets}セット。${s.round.content}`;
+      return `次、ラッシュバッグ`;
     }
   }
   return null;
