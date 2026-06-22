@@ -6,50 +6,83 @@ function getAudioCtx() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
   return audioCtx;
 }
 
-function beep(freq = 880, duration = 0.2) {
+// iOS/Android向け:最初のタッチ/クリックでAudioContextを解放しておく
+function unlockAudio() {
   const ctx = getAudioCtx();
-  const play = () => {
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+  // 無音バッファを再生してiOSのオーディオロックを解除
+  const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+document.addEventListener("touchstart", unlockAudio, { once: true });
+document.addEventListener("click", unlockAudio, { once: true });
+
+function playSound(fn) {
+  const ctx = getAudioCtx();
+  if (ctx.state === "running") {
+    fn(ctx);
+  } else {
+    ctx.resume().then(() => fn(ctx));
+  }
+}
+
+function beep(freq = 880, duration = 0.2) {
+  playSound(ctx => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.frequency.value = freq;
     osc.type = "sine";
     osc.connect(gain);
     gain.connect(ctx.destination);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
     osc.start();
-    osc.stop(ctx.currentTime + duration);
-  };
-  if (ctx.state === "running") {
-    play();
-  } else {
-    ctx.resume().then(play);
-  }
+    osc.stop(ctx.currentTime + duration + 0.01);
+  });
 }
 
-// ボクシングベル音:金属的な響きを重ねて大きめに鳴らす
+// リアルなボクシングベル音
+// 実際のベルは基音に非整数倍音が重なる。ボクシングベルは約500Hz基音+金属的高倍音
 function gong() {
-  const ctx = getAudioCtx();
-  const play = () => {
+  playSound(ctx => {
     const now = ctx.currentTime;
+
+    // マスターゲイン(クリッピング防止)
     const master = ctx.createGain();
-    master.gain.setValueAtTime(1.0, now);
+    master.gain.setValueAtTime(0.9, now);
     master.connect(ctx.destination);
 
-    // ベル基音 + 金属倍音(非整数比でリアルな金属感)
+    // 金属打音(ノイズバースト):ベルを叩いた瞬間の「カン」という衝撃音
+    const noiseLen = Math.floor(ctx.sampleRate * 0.08);
+    const noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) nd[i] = (Math.random() * 2 - 1);
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.6, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    noiseSrc.connect(noiseGain);
+    noiseGain.connect(master);
+    noiseSrc.start(now);
+
+    // ベル本体の倍音構成(実際のベルに近い非整数倍音)
+    // 基音500Hz + 実際のベルの倍音比率に近い値
     const partials = [
-      { freq: 420, vol: 1.0, decay: 3.5 },
-      { freq: 630, vol: 0.7, decay: 2.8 },
-      { freq: 840, vol: 0.5, decay: 2.2 },
-      { freq: 1050, vol: 0.35, decay: 1.8 },
-      { freq: 1680, vol: 0.2, decay: 1.2 },
-      { freq: 2520, vol: 0.1, decay: 0.8 },
+      { freq: 500,  vol: 1.0,  decay: 4.0 },
+      { freq: 1155, vol: 0.6,  decay: 3.2 },
+      { freq: 1862, vol: 0.4,  decay: 2.5 },
+      { freq: 2700, vol: 0.25, decay: 1.8 },
+      { freq: 3520, vol: 0.15, decay: 1.2 },
+      { freq: 4800, vol: 0.08, decay: 0.7 },
     ];
 
     partials.forEach(({ freq, vol, decay }) => {
@@ -59,34 +92,44 @@ function gong() {
       osc.frequency.value = freq;
       osc.connect(gain);
       gain.connect(master);
-      // 瞬間的に立ち上がり、ゆっくり減衰
       gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(vol, now + 0.005);
+      gain.gain.linearRampToValueAtTime(vol, now + 0.003); // 超高速アタック
       gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
       osc.start(now);
-      osc.stop(now + decay + 0.1);
+      osc.stop(now + decay + 0.05);
     });
-  };
-  if (ctx.state === "running") {
-    play();
-  } else {
-    ctx.resume().then(play);
-  }
+  });
 }
 
-// 音声アナウンス:短い言葉で自然に
+// 音声アナウンス:スマホ対応(voices非同期ロード考慮)
 function announce(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "ja-JP";
-  utter.rate = 0.85;
-  utter.pitch = 1.05;
+
+  const speak = () => {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ja-JP";
+    utter.rate = 0.85;
+    utter.pitch = 1.05;
+    const voices = window.speechSynthesis.getVoices();
+    const jaVoice = voices.find(v => v.lang.startsWith("ja") && !v.name.includes("Google"))
+                   || voices.find(v => v.lang.startsWith("ja"));
+    if (jaVoice) utter.voice = jaVoice;
+    window.speechSynthesis.speak(utter);
+  };
+
+  // Androidなどはvoicesが非同期でロードされるため遅延して再試行
   const voices = window.speechSynthesis.getVoices();
-  const jaVoice = voices.find(v => v.lang.startsWith("ja") && !v.name.includes("Google"))
-                 || voices.find(v => v.lang.startsWith("ja"));
-  if (jaVoice) utter.voice = jaVoice;
-  window.speechSynthesis.speak(utter);
+  if (voices.length > 0) {
+    speak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      speak();
+    };
+    // フォールバック:0.5秒後に音声リストを待たず実行
+    setTimeout(speak, 500);
+  }
 }
 
 let currentMenu = null;
