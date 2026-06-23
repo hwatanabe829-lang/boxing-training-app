@@ -65,6 +65,14 @@ const BAG_BY_BEGINNER_LEVEL = {
   ]
 };
 
+// 目慣れボクシング:フック期以降は最終ラウンドを「同じパンチで打ち返す」に変更
+const EYEBOXING_BY_LEVEL = {
+  beginner2: [
+    "目慣れボクシング:パートナーの軽いジャブをパリング(払う)で対応する練習",
+    "目慣れ受け返し:受けたら同じパンチで打ち返す。ジャブにはジャブ、フックにはフックで返す。打たない方の手は必ずガード"
+  ]
+};
+
 // ミット打ち:初心者期はシャドーと同じパンチ習得段階に合わせた内容(スタイル共通)
 const MITT_BY_BEGINNER_LEVEL = {
   beginner1: [
@@ -341,6 +349,8 @@ function generateMenu(level, style) {
       contentSet = BAG_BY_BEGINNER_LEVEL[level];
     } else if (phase === "mitt" && isBeginner) {
       contentSet = MITT_BY_BEGINNER_LEVEL[level];
+    } else if (phase === "eyeboxing" && EYEBOXING_BY_LEVEL[level]) {
+      contentSet = EYEBOXING_BY_LEVEL[level];
     } else {
       contentSet = PHASE_CONTENT[phase][style] || PHASE_CONTENT[phase].common;
     }
