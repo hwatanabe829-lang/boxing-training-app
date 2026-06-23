@@ -114,6 +114,7 @@ function announce(text, onEnd) {
     utter.lang = "ja-JP";
     utter.rate = 0.85;
     utter.pitch = 1.05;
+    utter.volume = 1.0; // ブラウザ仕様上の最大値(これ以上は上げられない)
     const voices = window.speechSynthesis.getVoices();
     const jaVoice = voices.find(v => v.lang.startsWith("ja") && !v.name.includes("Google"))
                    || voices.find(v => v.lang.startsWith("ja"));
