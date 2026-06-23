@@ -172,6 +172,17 @@ main {
   cursor: not-allowed;
 }
 
+#musicBtn {
+  background: #ff9900;
+  color: #1a1a1a;
+  font-size: 1.2rem;
+  padding: 10px 16px;
+}
+
+#musicBtn:hover {
+  background: #ffb84d;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }

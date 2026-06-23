@@ -292,6 +292,21 @@ function formatTime(sec) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+// ハイテンションJ-POPワークアウトプレイリスト(Amazon Music)
+const AMAZON_MUSIC_PLAYLIST_URL = "https://music.amazon.co.jp/playlists/B08C79516K";
+
+// Amazon Musicでプレイリストを開く。アプリ/タブが開けない場合は何もしない(無音のまま)
+function openAmazonMusic() {
+  try {
+    const win = window.open(AMAZON_MUSIC_PLAYLIST_URL, "_blank");
+    if (!win) return; // ポップアップブロック等 → 静かに諦める
+  } catch (e) {
+    // 何もしない
+  }
+}
+
+document.getElementById("musicBtn").addEventListener("click", openAmazonMusic);
+
 function startTimer() {
   if (!currentMenu) return;
 
@@ -314,6 +329,7 @@ function startTimer() {
     timerSteps = buildSteps(currentMenu);
     stepIndex = 0;
     remaining = timerSteps[0].duration;
+    openAmazonMusic();
     // 最初のラウンド開始ゴング+アナウンス
     gong();
     const first = timerSteps[0];
