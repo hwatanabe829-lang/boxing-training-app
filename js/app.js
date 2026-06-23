@@ -188,6 +188,40 @@ function renderMenu(menu, level, style) {
     container.appendChild(tipCard);
   }
 
+  // 技術ライブラリ（索引）
+  if (typeof getTipsByGroup === "function") {
+    const lib = document.createElement("div");
+    lib.className = "tech-library";
+    lib.innerHTML = '<div class="tech-library-title">📖 技術ライブラリ</div>';
+    getTipsByGroup().forEach((g, gi) => {
+      const section = document.createElement("div");
+      section.className = "tech-group";
+      const btn = document.createElement("button");
+      btn.className = "tech-group-btn";
+      btn.textContent = g.group;
+      btn.setAttribute("aria-expanded", "false");
+      const content = document.createElement("div");
+      content.className = "tech-group-content";
+      content.hidden = true;
+      g.tips.forEach(t => {
+        const item = document.createElement("div");
+        item.className = "tech-tip-item";
+        item.innerHTML = `<span class="tech-tip-cat">${t.category}</span><p class="tech-tip-text">${t.text}</p>`;
+        content.appendChild(item);
+      });
+      btn.addEventListener("click", () => {
+        const open = !content.hidden;
+        content.hidden = open;
+        btn.setAttribute("aria-expanded", String(!open));
+        btn.classList.toggle("open", !open);
+      });
+      section.appendChild(btn);
+      section.appendChild(content);
+      lib.appendChild(section);
+    });
+    container.appendChild(lib);
+  }
+
   document.getElementById("timerSection").style.display = "block";
   document.getElementById("startTimerBtn").disabled = false;
 }

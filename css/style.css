@@ -189,6 +189,82 @@ main {
   background: #2a2a00;
 }
 
+.tech-library {
+  margin-top: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+}
+
+.tech-library-title {
+  background: #3a3a3a;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #f1c40f;
+  letter-spacing: 0.05em;
+}
+
+.tech-group-btn {
+  width: 100%;
+  text-align: left;
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border: none;
+  border-top: 1px solid #3a3a3a;
+  padding: 11px 14px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+}
+
+.tech-group-btn::after {
+  content: "▶";
+  position: absolute;
+  right: 14px;
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+  color: #888;
+}
+
+.tech-group-btn.open::after {
+  transform: rotate(90deg);
+}
+
+.tech-group-btn:hover {
+  background: #333;
+}
+
+.tech-group-content {
+  background: #222;
+  padding: 4px 0;
+}
+
+.tech-tip-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid #2e2e2e;
+}
+
+.tech-tip-item:last-child {
+  border-bottom: none;
+}
+
+.tech-tip-cat {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #f1c40f;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.tech-tip-text {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #ccc;
+  line-height: 1.65;
+}
+
 .safety-note {
   font-size: 0.85rem;
   color: #f1c40f;

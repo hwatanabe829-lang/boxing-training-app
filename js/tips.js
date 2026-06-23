@@ -36,7 +36,23 @@ const BOXING_TIPS = [
   { category: "練習の心構え", text: "練習は体力的に追い込む練習と、課題を考えて頭を使う練習の両方が重要。漫然と打つのをやめて「今日の課題は何か」を常に考えてから練習しよう。" },
 ];
 
+// グループ定義（索引ライブラリ用）
+const BOXING_TIPS_GROUPS = [
+  { group: "パンチの打ち方", categories: ["ジャブ", "右ストレート", "左フック", "左ボディ", "左アッパー", "パンチ全般"] },
+  { group: "パンチ力・理論",  categories: ["パンチ力", "打たれ強さ"] },
+  { group: "実戦テクニック", categories: ["上下中外", "ジャブ変化", "カウンター", "フェイント", "連打", "接近戦", "連打対処", "KO理論", "ディフェンス"] },
+  { group: "練習の心構え",   categories: ["シャドー目的", "サンドバック目的", "ミット目的", "スパー目的", "練習の心構え"] },
+];
+
 // メニュー生成時にランダムで1件返す
 function getDailyTip() {
   return BOXING_TIPS[Math.floor(Math.random() * BOXING_TIPS.length)];
+}
+
+// グループ別に全Tipを返す
+function getTipsByGroup() {
+  return BOXING_TIPS_GROUPS.map(g => ({
+    group: g.group,
+    tips: g.categories.flatMap(cat => BOXING_TIPS.filter(t => t.category === cat)),
+  }));
 }
