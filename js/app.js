@@ -102,8 +102,11 @@ function gong() {
 }
 
 // 音声アナウンス:スマホ対応(voices非同期ロード考慮)
-function announce(text) {
-  if (!window.speechSynthesis) return;
+function announce(text, onEnd) {
+  if (!window.speechSynthesis) {
+    if (onEnd) onEnd();
+    return;
+  }
   window.speechSynthesis.cancel();
 
   const speak = () => {
@@ -115,6 +118,10 @@ function announce(text) {
     const jaVoice = voices.find(v => v.lang.startsWith("ja") && !v.name.includes("Google"))
                    || voices.find(v => v.lang.startsWith("ja"));
     if (jaVoice) utter.voice = jaVoice;
+    if (onEnd) {
+      utter.onend = onEnd;
+      utter.onerror = onEnd;
+    }
     window.speechSynthesis.speak(utter);
   };
 
@@ -329,16 +336,18 @@ function startTimer() {
     timerSteps = buildSteps(currentMenu);
     stepIndex = 0;
     remaining = timerSteps[0].duration;
-    openAmazonMusic();
-    // 最初のラウンド開始ゴング+アナウンス
+    // 最初のラウンド開始ゴング+アナウンス。音楽はアナウンスが終わってから開く
+    // (タブが背面に回るとspeechSynthesisが止まるブラウザがあるため)
     gong();
     const first = timerSteps[0];
     if (first.type === "work") {
       const content = toSpeechText(first.round.content);
-      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`), 1500);
+      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`, openAmazonMusic), 1500);
     } else if (first.type === "rush") {
       const content = toSpeechText(first.round.content);
-      setTimeout(() => announce(`ラッシュバッグ。${content}`), 1500);
+      setTimeout(() => announce(`ラッシュバッグ。${content}`, openAmazonMusic), 1500);
+    } else {
+      openAmazonMusic();
     }
     updateTimerDisplay();
   }
