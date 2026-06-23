@@ -176,15 +176,17 @@ function renderMenu(menu, level, style) {
   container.appendChild(tableWrap);
 
   // 今日のテクニック
-  const tip = getDailyTip();
-  const tipCard = document.createElement("div");
-  tipCard.className = "tip-card";
-  tipCard.innerHTML = `
-    <div class="tip-header">💡 今日のテクニック</div>
-    <div class="tip-category">${tip.category}</div>
-    <div class="tip-text">${tip.text}</div>
-  `;
-  container.appendChild(tipCard);
+  if (typeof getDailyTip === "function") {
+    const tip = getDailyTip();
+    const tipCard = document.createElement("div");
+    tipCard.className = "tip-card";
+    tipCard.innerHTML = `
+      <div class="tip-header">💡 今日のテクニック</div>
+      <div class="tip-category">${tip.category}</div>
+      <div class="tip-text">${tip.text}</div>
+    `;
+    container.appendChild(tipCard);
+  }
 
   document.getElementById("timerSection").style.display = "block";
   document.getElementById("startTimerBtn").disabled = false;
