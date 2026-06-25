@@ -196,6 +196,15 @@ function renderMenu(menu, level, style) {
     container.appendChild(tipCard);
   }
 
+  // コーチ新座宏のYouTube参照
+  const ytCard = document.createElement("div");
+  ytCard.className = "coach-video-card";
+  ytCard.innerHTML = `
+    <div class="coach-video-text">🎥 詳しい打ち方は新座宏コーチのYouTubeで解説中</div>
+    <a class="coach-video-link" href="https://www.youtube.com/@%E6%96%B0%E5%BA%A7%E5%AE%8F" target="_blank" rel="noopener">YouTubeで見る →</a>
+  `;
+  container.appendChild(ytCard);
+
   // 技術ライブラリ（索引）
   if (typeof getTipsByGroup === "function") {
     const lib = document.createElement("div");

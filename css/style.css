@@ -167,6 +167,39 @@ main {
   background: #ffb84d;
 }
 
+.coach-video-card {
+  margin-top: 16px;
+  background: #2a1a1a;
+  border-left: 4px solid #ff0000;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.coach-video-text {
+  font-size: 0.9rem;
+  color: #f0f0f0;
+}
+
+.coach-video-link {
+  background: #ff0000;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.coach-video-link:hover {
+  background: #cc0000;
+}
+
 .tech-library {
   margin-top: 16px;
   border-radius: 8px;
