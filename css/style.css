@@ -154,6 +154,16 @@ main {
   margin: 10px 0;
 }
 
+.timer-display.countdown-warning {
+  color: #e74c3c;
+  animation: countdown-flash 0.5s infinite;
+}
+
+@keyframes countdown-flash {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.08); }
+}
+
 .timer-label {
   font-size: 1.1rem;
   margin-bottom: 10px;

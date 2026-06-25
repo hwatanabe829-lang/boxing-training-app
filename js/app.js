@@ -309,6 +309,7 @@ function resetTimerState() {
   stepIndex = 0;
   remaining = 0;
   document.getElementById("timerDisplay").textContent = "--:--";
+  document.getElementById("timerDisplay").classList.remove("countdown-warning");
   document.getElementById("timerLabel").textContent = "準備中";
   document.getElementById("startTimerBtn").textContent = "開始";
   document.getElementById("startTimerBtn").disabled = !currentMenu;
@@ -473,7 +474,9 @@ function advanceStep() {
 
 function updateTimerDisplay() {
   const step = timerSteps[stepIndex];
-  document.getElementById("timerDisplay").textContent = formatTime(remaining);
+  const display = document.getElementById("timerDisplay");
+  display.textContent = formatTime(remaining);
+  display.classList.toggle("countdown-warning", remaining > 0 && remaining <= 3);
 
   document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
 
