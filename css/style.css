@@ -123,6 +123,30 @@ main {
   text-align: center;
 }
 
+.start-round-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+
+.start-round-picker select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.9rem;
+  max-width: 80%;
+}
+
+.start-round-picker select:disabled {
+  opacity: 0.5;
+}
+
 .timer-display {
   font-size: 3rem;
   font-weight: bold;

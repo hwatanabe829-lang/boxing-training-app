@@ -178,6 +178,18 @@ function renderMenu(menu, level, style) {
   });
   table.appendChild(tbody);
 
+  // 開始ラウンド選択肢を再構築
+  const startRoundSelect = document.getElementById("startRoundSelect");
+  startRoundSelect.innerHTML = "";
+  menu.rounds.forEach((r, i) => {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = r.phase === "rushbag"
+      ? `🥊 ラッシュバッグ — ${r.phaseName}`
+      : `第${r.round}R — ${r.phaseName}`;
+    startRoundSelect.appendChild(opt);
+  });
+
   const tableWrap = document.createElement("div");
   tableWrap.className = "menu-table-wrap";
   tableWrap.appendChild(table);
@@ -300,6 +312,7 @@ function resetTimerState() {
   document.getElementById("timerLabel").textContent = "準備中";
   document.getElementById("startTimerBtn").textContent = "開始";
   document.getElementById("startTimerBtn").disabled = !currentMenu;
+  document.getElementById("startRoundSelect").disabled = false;
   document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
 }
 
@@ -344,12 +357,18 @@ function startTimer() {
 
   if (!timerSteps) {
     timerSteps = buildSteps(currentMenu);
-    stepIndex = 0;
-    remaining = timerSteps[0].duration;
+
+    const startRoundIndex = Number(document.getElementById("startRoundSelect").value || 0);
+    const startRound = currentMenu.rounds[startRoundIndex];
+    const foundIndex = timerSteps.findIndex(s => s.round === startRound);
+    stepIndex = foundIndex >= 0 ? foundIndex : 0;
+    document.getElementById("startRoundSelect").disabled = true;
+
+    remaining = timerSteps[stepIndex].duration;
     // 最初のラウンド開始ゴング+アナウンス。音楽はアナウンスが終わってから開く
     // (タブが背面に回るとspeechSynthesisが止まるブラウザがあるため)
     gong();
-    const first = timerSteps[0];
+    const first = timerSteps[stepIndex];
     if (first.type === "work") {
       const content = toSpeechText(first.round.content);
       setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`, openAmazonMusic), 1500);
