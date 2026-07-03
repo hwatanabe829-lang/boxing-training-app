@@ -190,16 +190,6 @@ main {
   color: #fff;
 }
 
-#musicBtn {
-  background: #ff9900;
-  color: #1a1a1a;
-  font-size: 1.2rem;
-  padding: 10px 16px;
-}
-
-#musicBtn:hover {
-  background: #ffb84d;
-}
 
 .coach-video-card {
   margin-top: 16px;

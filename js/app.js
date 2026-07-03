@@ -323,21 +323,6 @@ function formatTime(sec) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-// ハイテンションJ-POPワークアウトプレイリスト(Amazon Music)
-const AMAZON_MUSIC_PLAYLIST_URL = "https://music.amazon.co.jp/playlists/B08C79516K";
-
-// Amazon Musicでプレイリストを開く。アプリ/タブが開けない場合は何もしない(無音のまま)
-function openAmazonMusic() {
-  try {
-    const win = window.open(AMAZON_MUSIC_PLAYLIST_URL, "_blank");
-    if (!win) return; // ポップアップブロック等 → 静かに諦める
-  } catch (e) {
-    // 何もしない
-  }
-}
-
-document.getElementById("musicBtn").addEventListener("click", openAmazonMusic);
-
 function startTimer() {
   if (!currentMenu) return;
 
@@ -372,12 +357,10 @@ function startTimer() {
     const first = timerSteps[stepIndex];
     if (first.type === "work") {
       const content = toSpeechText(first.round.content);
-      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`, openAmazonMusic), 1500);
+      setTimeout(() => announce(`${first.round.round}ラウンド。${first.round.phaseName}。${content}`), 1500);
     } else if (first.type === "rush") {
       const content = toSpeechText(first.round.content);
-      setTimeout(() => announce(`ラッシュバッグ。${content}`, openAmazonMusic), 1500);
-    } else {
-      openAmazonMusic();
+      setTimeout(() => announce(`ラッシュバッグ。${content}`), 1500);
     }
     updateTimerDisplay();
   }
