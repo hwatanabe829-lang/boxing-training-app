@@ -255,9 +255,27 @@ function renderMenu(menu, level, style) {
   document.getElementById("startTimerBtn").disabled = false;
 }
 
+// 前回選んだレベル・スタイルを復元
+(function restoreSelections() {
+  try {
+    const level = localStorage.getItem("boxing.level");
+    const style = localStorage.getItem("boxing.style");
+    if (level && document.querySelector(`#levelSelect option[value="${level}"]`)) {
+      document.getElementById("levelSelect").value = level;
+    }
+    if (style && document.querySelector(`#styleSelect option[value="${style}"]`)) {
+      document.getElementById("styleSelect").value = style;
+    }
+  } catch (e) { /* プライベートモード等でlocalStorage不可なら黙って無視 */ }
+})();
+
 document.getElementById("generateBtn").addEventListener("click", () => {
   const level = document.getElementById("levelSelect").value;
   const style = document.getElementById("styleSelect").value;
+  try {
+    localStorage.setItem("boxing.level", level);
+    localStorage.setItem("boxing.style", style);
+  } catch (e) { /* 保存できなくても動作に支障なし */ }
   currentMenu = generateMenu(level, style);
   renderMenu(currentMenu, level, style);
   resetTimerState();
@@ -271,7 +289,35 @@ const RUSH_SEC = 30;
 let timerSteps = null; // 平坦化したステップ配列
 let stepIndex = 0;
 let remaining = 0;
+let stepEndAt = 0;     // 現ステップの終了時刻(実時刻基準でズレを防ぐ)
 let timerInterval = null;
+
+// ===== 画面スリープ防止(Wake Lock) =====
+// スマホで練習中に画面が消えるとタイマー・音声が止まるため、動作中はスリープさせない
+let wakeLock = null;
+
+async function acquireWakeLock() {
+  if (!("wakeLock" in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+  } catch (e) {
+    // 省電力モード等で拒否されることがある。タイマー自体は動くので無視
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release().catch(() => {});
+    wakeLock = null;
+  }
+}
+
+// タブ復帰時にWake Lockを取り直す(バックグラウンドに回ると自動解除されるため)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && timerInterval) {
+    acquireWakeLock();
+  }
+});
 
 /**
  * メニューからタイマーのステップ列を組み立てる。
@@ -305,9 +351,11 @@ function buildSteps(menu) {
 function resetTimerState() {
   clearInterval(timerInterval);
   timerInterval = null;
+  releaseWakeLock();
   timerSteps = null;
   stepIndex = 0;
   remaining = 0;
+  setProgress(0);
   document.getElementById("timerDisplay").textContent = "--:--";
   document.getElementById("timerDisplay").classList.remove("countdown-warning");
   document.getElementById("timerLabel").textContent = "準備中";
@@ -334,9 +382,11 @@ function startTimer() {
   }
 
   if (timerInterval) {
-    // 一時停止
+    // 一時停止:残り秒数を確定させて保持
+    remaining = Math.max(0, Math.ceil((stepEndAt - Date.now()) / 1000));
     clearInterval(timerInterval);
     timerInterval = null;
+    releaseWakeLock();
     document.getElementById("startTimerBtn").textContent = "再開";
     return;
   }
@@ -366,11 +416,16 @@ function startTimer() {
   }
 
   document.getElementById("startTimerBtn").textContent = "一時停止";
-  timerInterval = setInterval(tick, 1000);
+  // 実時刻基準の締切を設定(setIntervalの累積ズレを防ぐ)
+  stepEndAt = Date.now() + remaining * 1000;
+  timerInterval = setInterval(tick, 250);
+  acquireWakeLock();
 }
 
 function tick() {
-  remaining -= 1;
+  const newRemaining = Math.ceil((stepEndAt - Date.now()) / 1000);
+  if (newRemaining === remaining) return; // 秒が変わった時だけ処理
+  remaining = newRemaining;
 
   if (remaining <= 0) {
     // カウントが0になった瞬間にゴングを鳴らしてステップ移行
@@ -420,6 +475,7 @@ function advanceStep() {
     const prevStep = timerSteps[stepIndex];
     stepIndex += 1;
     remaining = timerSteps[stepIndex].duration;
+    stepEndAt = Date.now() + remaining * 1000;
     const curStep = timerSteps[stepIndex];
 
     if (curStep.type === "rest") {
@@ -448,10 +504,33 @@ function advanceStep() {
     gong();
     clearInterval(timerInterval);
     timerInterval = null;
+    releaseWakeLock();
     document.getElementById("timerLabel").textContent = "トレーニング終了！お疲れ様でした 🥊";
     document.getElementById("timerDisplay").textContent = "00:00";
+    document.getElementById("timerDisplay").classList.remove("countdown-warning");
     document.getElementById("startTimerBtn").disabled = true;
+    document.getElementById("startRoundSelect").disabled = false;
+    setProgress(1);
     document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
+  }
+}
+
+// 全体進捗バー(0〜1)を更新する
+function setProgress(ratio) {
+  const bar = document.getElementById("progressBar");
+  const label = document.getElementById("progressLabel");
+  if (!bar) return;
+  bar.style.width = `${Math.min(100, Math.max(0, ratio * 100))}%`;
+  if (label) {
+    if (timerSteps && ratio > 0 && ratio < 1) {
+      const workSteps = timerSteps.filter(s => s.type !== "rest");
+      const done = timerSteps.slice(0, stepIndex + 1).filter(s => s.type !== "rest").length;
+      label.textContent = `進捗 ${done}/${workSteps.length}`;
+    } else if (ratio >= 1) {
+      label.textContent = "完了！";
+    } else {
+      label.textContent = "";
+    }
   }
 }
 
@@ -460,6 +539,10 @@ function updateTimerDisplay() {
   const display = document.getElementById("timerDisplay");
   display.textContent = formatTime(remaining);
   display.classList.toggle("countdown-warning", remaining > 0 && remaining <= 3);
+
+  // 全体進捗:経過ステップ+現ステップ内の消化割合
+  const stepFraction = step.duration > 0 ? 1 - remaining / step.duration : 0;
+  setProgress((stepIndex + stepFraction) / timerSteps.length);
 
   document.querySelectorAll(".menu-table tbody tr").forEach(tr => tr.classList.remove("active-round"));
 

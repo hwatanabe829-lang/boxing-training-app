@@ -154,6 +154,33 @@ main {
   margin: 10px 0;
 }
 
+.progress-wrap {
+  margin: 6px auto 12px;
+  max-width: 420px;
+}
+
+.progress-track {
+  height: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #27ae60, #f1c40f);
+  border-radius: 4px;
+  transition: width 0.4s linear;
+}
+
+.progress-label {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #aaa;
+  min-height: 1em;
+}
+
 .timer-display.countdown-warning {
   color: #e74c3c;
   animation: countdown-flash 0.5s infinite;
