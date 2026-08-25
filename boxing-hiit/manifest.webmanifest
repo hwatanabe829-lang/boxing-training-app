@@ -1,0 +1,19 @@
+{
+  "name": "BOXER HIIT 20/10",
+  "short_name": "BOXER HIIT",
+  "description": "ボクシング練習後に立ったままできる20秒トレ・10秒レストのHIITアプリ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
