@@ -1,0 +1,100 @@
+function readable(t){ return t.replace(/→/g,'、').replace(/[／・]/g,'、').replace(/～/g,'から'); }
+function sayEx(ex, head){
+  if(!S.tips){ say((head||'')+readable(ex.n)); return; }
+  say((head||'') + readable(ex.n) + '。' + readable(ex.d), 1.1);
+}
+
+/* 画面が消えないように */
+let wl=null;
+async function lockScreen(){ try{ if('wakeLock' in navigator) wl = await navigator.wakeLock.request('screen'); }catch(e){} }
+function unlockScreen(){ try{ wl && wl.release(); wl=null; }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && run.classList.contains('on')) lockScreen(); });
+
+/* ============================================================
+   セッション組み立て
+============================================================ */
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function buildSteps(p){
+  const per = p.r || 8;
+  let base;
+  if(p.l) base = p.l;
+  else {                                   // ランダム：カテゴリが偏らないよう混ぜる
+    const pick = c => shuffle(EX.filter(e=>e.c===c)).map(e=>e.id);
+    const pools = [pick('punch'),pick('leg'),pick('core'),pick('foot'),pick('def')];
+    base=[]; let i=0;
+    while(base.length < per){ const q=pools[i%pools.length]; if(q.length) base.push(q.pop()); i++; }
+  }
+  const steps=[];
+  steps.push({type:'prep', dur:10});
+  for(let s=0; s<S.sets; s++){
+    for(let r=0; r<per; r++){
+      steps.push({type:'work', dur:S.work, ex:EXMAP[base[(s*per+r)%base.length]]});
+      const last = (s===S.sets-1 && r===per-1);
+      if(!last){
+        if(r===per-1) steps.push({type:'setrest', dur:S.setrest});
+        else steps.push({type:'rest', dur:S.rest});
+      }
+    }
+  }
+  return steps;
+}
+
+/* ============================================================
+   実行エンジン
+============================================================ */
+let ses = null;   // {p, steps, i, left, paused, timer, spent}
+const R = 88, C = 2*Math.PI*R;
+ringFg.style.strokeDasharray = C;
+
+function start(p){
+  audio(); // ユーザー操作のタイミングで音を有効化
+  ses = {p, steps:buildSteps(p), i:0, left:0, paused:false, spent:0, lastSay:-1};
+  home.classList.remove('on'); fin.classList.remove('on');
+  run.classList.add('on');
+  lockScreen();
+  enter(0);
+  clearInterval(ses.timer);
+  ses.timer = setInterval(loop, 100);
+}
+
+function enter(i){
+  ses.i = i;
+  const st = ses.steps[i];
+  if(!st){ finish(); return; }
+  ses.left = st.dur;
+  ses.lastSay = -1;
+
+  const totalWork = ses.steps.filter(s=>s.type==='work').length;
+  const doneWork  = ses.steps.slice(0,i).filter(s=>s.type==='work').length;
+  const curWork   = st.type==='work' ? doneWork+1 : Math.min(doneWork+1,totalWork);
+  pgTxt.textContent = `ROUND ${curWork} / ${totalWork}`;
+
+  const nxs = ses.steps.slice(i+1).find(s=>s.type==='work');
+  const nx = nxs ? nxs.ex : null;
+  const col = {work:'var(--red)', rest:'var(--green)', setrest:'var(--blue)', prep:'var(--yellow)'}[st.type];
+  ringFg.setAttribute('stroke', col);
+  phase.style.color = col;
+
+  if(st.type==='work'){
+    phase.textContent='WORK';
+    exName.textContent = st.ex.n;
+    exDesc.textContent = st.ex.d;
+    nextUp.innerHTML = nx ? `次は <b>${nx.n}</b>` : 'ラストラウンド！';
+    beepGo(); sayEx(st.ex);   // 開始時も種目名＋やり方を読み上げ
+  } else if(st.type==='rest'){
+    phase.textContent='REST';
+    exName.textContent='休憩';
+    exDesc.textContent='肩の力を抜いて深呼吸。すぐ次の構えに入れる位置に立つ。';
+    nextUp.innerHTML = nx ? `次は <b>${nx.n}</b>` : '';
+    beepStop();
+    if(nx) sayEx(nx, '休憩。次は'); else say('休憩。次がラストです');
+  } else if(st.type==='setrest'){
+    phase.textContent='SET REST';
+    exName.textContent='セット間休憩';
+    exDesc.textContent='水分を取って、呼吸を整える。歩き回ってOK。';
+    nextUp.innerHTML = nx ? `次は <b>${nx.n}</b>` : '';
+    beepStop();
+    if(nx) sayEx(nx, 'セット間の休憩。水分を取ってください。次は'); else say('セット間の休憩。水分を取ってください');
+  } else {
+    phase.textContent='READY';
