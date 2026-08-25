@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>BOXER HIIT</title>
+<style>html,body{margin:0;height:100%;background:#0d0f14;color:#eef2f8;font-family:system-ui,sans-serif}body{display:grid;place-items:center}.loading{text-align:center}.loading b{display:block;font-size:22px;margin-bottom:8px}.loading span{color:#93a0b5;font-size:13px}</style>
+</head>
+<body>
+<div class="loading"><b>🥊 BOXER HIIT</b><span>起動しています…</span></div>
+<script>
+(async()=>{
+  const files=['01.txt','02.txt','03.txt','04.txt','05.txt','06.txt','07.txt','08.txt'];
+  try{
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+    const texts=await Promise.all(files.map(f=>fetch('./parts/'+f,{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error(f);return r.text();})));
+    let html=texts.join('\n');
+    html=html.replace('</head>','<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"></head>');
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    document.body.innerHTML='<div class="loading"><b>読み込みに失敗しました</b><span>通信を確認してページを再読み込みしてください。</span></div>';
+  }
+})();
+</script>
+</body>
+</html>
