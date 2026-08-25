@@ -1,0 +1,93 @@
+    exName.textContent='準備';
+    exDesc.textContent='両足を肩幅に開き、ガードを上げて構える。';
+    nextUp.innerHTML = nx ? `最初は <b>${nx.n}</b>` : '';
+    if(nx) sayEx(nx, '準備。最初は');
+  }
+
+  // 動画ボタン：運動中は今の種目、休憩中は次の種目のお手本を開く
+  vidTarget = (st.type==='work') ? st.ex : nx;
+  refreshVidBtn();
+
+  draw();
+}
+
+let vidTarget = null;
+function refreshVidBtn(){
+  vidBox.style.display = vidTarget ? 'block' : 'none';
+  if(!vidTarget) return;
+  const saved = hasVid(vidTarget);
+  btnVid.textContent = saved ? '▶ 登録した動画を見る' : '▶ お手本動画を探す';
+  btnVid.classList.toggle('saved', saved);
+  btnVidSet.textContent = saved ? '変更' : '＋ 登録';
+}
+function pauseForVideo(){
+  if(ses && !ses.paused){ ses.paused=true; btnPause.textContent='再開する'; }
+  speechSynthesis && speechSynthesis.cancel();
+}
+btnVid.onclick = ()=>{ if(!vidTarget) return; pauseForVideo(); openVideo(vidTarget); };
+btnVidSet.onclick = ()=>{ if(!vidTarget) return; pauseForVideo(); setVideo(vidTarget, refreshVidBtn); };
+
+function draw(){
+  const st=ses.steps[ses.i];
+  const sec = Math.ceil(ses.left - 0.0001);
+  num.textContent = Math.max(0,sec);
+  const p = Math.min(1, Math.max(0, ses.left)/st.dur);
+  ringFg.style.strokeDashoffset = C * (1 - p);
+  pgBar.style.width = Math.round((ses.i + (1-p)) / ses.steps.length * 100)+'%';
+}
+
+function loop(){
+  if(!ses || ses.paused) return;
+  ses.left -= 0.1;
+  const st = ses.steps[ses.i];
+  if(st.type!=='prep') ses.spent += 0.1;
+
+  const sec = Math.ceil(ses.left - 0.0001);
+  if(sec !== ses.lastSay && sec>0 && sec<=3){ ses.lastSay=sec; beepTick(); }
+
+  if(ses.left <= 0){ enter(ses.i+1); return; }
+  draw();
+}
+
+btnPause.onclick = ()=>{
+  ses.paused = !ses.paused;
+  btnPause.textContent = ses.paused ? '再開する' : '一時停止';
+  if(ses.paused) speechSynthesis && speechSynthesis.cancel();
+};
+btnSkip.onclick = ()=>{ if(ses) enter(ses.i+1); };
+btnPrev.onclick = ()=>{ if(ses) enter(Math.max(0, ses.i-1)); };
+btnQuit.onclick = ()=>{
+  if(!confirm('トレーニングを終了しますか？（ここまでの記録は残ります）')) return;
+  finish(true);
+};
+
+function finish(quit=false){
+  clearInterval(ses.timer);
+  unlockScreen();
+  speechSynthesis && speechSynthesis.cancel();
+  if(!quit){ beep(880,.15); setTimeout(()=>beep(1100,.15),160); setTimeout(()=>beep(1320,.4),330); say('お疲れさまでした'); }
+
+  const done = ses.steps.slice(0, quit? ses.i+1 : ses.steps.length).filter(s=>s.type==='work').length;
+  const sec  = Math.round(ses.spent);
+  const kcal = Math.round(9 * S.weight * (sec/3600) * 1.05);
+  if(done>0) addLog({date:today(), prog:ses.p.id, rounds:done, sec, kcal});
+
+  rRound.textContent = done;
+  rTime.textContent  = Math.max(1, Math.round(sec/60));
+  rKcal.textContent  = kcal;
+  finTitle.textContent = quit ? 'ここまでお疲れさまです' : 'お疲れさまでした！';
+  finSub.textContent   = ses.p.t + (quit?'（途中終了）':' 完了');
+
+  run.classList.remove('on');
+  fin.classList.add('on');
+  renderStats();
+  btnPause.textContent='一時停止';
+}
+btnAgain.onclick = ()=>start(ses.p);
+btnHome.onclick  = ()=>{ fin.classList.remove('on'); home.classList.add('on'); window.scrollTo(0,0); };
+
+/* 初期化 */
+renderSet(); renderCards(); renderStats();
+</script>
+</body>
+</html>
