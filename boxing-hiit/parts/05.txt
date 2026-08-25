@@ -1,0 +1,100 @@
+  // 下半身・体幹
+  squat:'スクワット フォーム やり方',      lunge:'ランジ フォーム やり方',
+  sumo:'ワイドスクワット やり方',          calf:'カーフレイズ やり方',
+  wall:'空気椅子 ウォールシット やり方',   hinge:'グッドモーニング 自重 やり方',
+  jsq:'ジャンプスクワット やり方',         sqp:'ボクシング スクワット パンチ 連動',
+  scr:'立ちクランチ スタンディングクランチ',cross:'立ったまま クロスニー 腹斜筋',
+  sbend:'サイドベンド やり方',             chop:'ウッドチョップ 体幹 やり方',
+  twist:'立ったまま ツイスト 腹斜筋',      kup:'ニーアップ 腹筋 立ったまま',
+  wpush:'壁 腕立て伏せ やり方',            jack:'ジャンピングジャック やり方',
+  skate:'スケーターホップ やり方',         knee:'もも上げ ハイニー やり方',
+  rope:'エア縄跳び ボクシング',            sprint:'ボクシング その場ダッシュ パンチ',
+};
+function searchUrl(ex){
+  const clean = ex.n.replace(/（.*?）/g,'').replace(/→/g,' ').trim();
+  const q = VQ[ex.id] || (['punch','def','foot'].includes(ex.c) ? 'ボクシング '+clean : clean+' やり方');
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+}
+
+/* お気に入り動画（種目ごとに1本、この端末に保存） */
+let VIDS = JSON.parse(localStorage.getItem('bhiit_vids')||'{}');
+const saveVids = ()=>localStorage.setItem('bhiit_vids', JSON.stringify(VIDS));
+const hasVid   = ex => !!VIDS[ex.id];
+function videoUrl(ex){ return VIDS[ex.id] || searchUrl(ex); }
+function openVideo(ex){ window.open(videoUrl(ex), '_blank', 'noopener'); }
+
+function setVideo(ex, after){
+  const cur = VIDS[ex.id] || '';
+  const msg = '【'+ex.n+'】のお気に入り動画\n\n'
+            + 'YouTubeで良かった動画のURLを貼り付けてください。\n'
+            + '例）https://youtu.be/xxxxxxxx\n\n'
+            + (cur ? '※ 空っぽにして「OK」を押すと登録を解除します。' : '');
+  const v = prompt(msg, cur);
+  if(v === null) return;                       // キャンセル
+  const t = v.trim();
+  if(!t){ delete VIDS[ex.id]; saveVids(); after && after(); return; }
+  if(!/^https?:\/\//i.test(t)){ alert('「https://」で始まるURLを貼り付けてください。'); return; }
+  VIDS[ex.id] = t; saveVids(); after && after();
+}
+
+/* ============================================================
+   プログラム（8ラウンド＝1セット）
+============================================================ */
+const PROG = [
+  {id:'basic', ico:'⭐', t:'ベーシック8',    s:'全身をまんべんなく。まずはこれから',
+   l:['squat','jab','knee','cross','lunge','onetwo','jack','scr']},
+  {id:'punch', ico:'👊', t:'パンチ地獄',      s:'腕と肩を追い込む。打ち終わりのスタミナ用',
+   l:['jab','onetwo','hook','upper','body','combo3','pout','ghold']},
+  {id:'leg',   ico:'🦵', t:'下半身＆フット',  s:'ステップが最後まで落ちない足を作る',
+   l:['squat','sideL','lunge','rope','sumo','inout','jsq','calf']},
+  {id:'core',  ico:'🔥', t:'体幹しめ',        s:'打たれ強い腹と、パンチが走る回転力',
+   l:['scr','cross','twist','chop','sbend','kup','hinge','wall']},
+  {id:'def',   ico:'🛡️', t:'ディフェンス',    s:'前半で基本の3つ、後半はパンチとの連動',
+   l:['duck','slip','weave','slipc','duckh','parry','weavec','roll']},
+  {id:'counter',ico:'🎯', t:'カウンター連動',  s:'よけて即返す。全ラウンド、防御＋パンチ',
+   l:['slipc','duckh','parry','weavec','roll','block','bstep','sideh']},
+  {id:'hard',  ico:'💀', t:'追い込み（高強度）', s:'余力がある日だけ。心拍が一気に上がる',
+   l:['jsq','sprint','skate','pout','jack','sqp','knee','shadow']},
+  {id:'quick', ico:'⚡', t:'クイック2分',     s:'4ラウンドだけ。疲れている日の最低ライン',
+   l:['squat','onetwo','knee','cross'], r:4},
+  {id:'mix16', ico:'🥊', t:'フルボディ16',    s:'8分ロング。パンチ・脚・体幹を交互に',
+   l:['jab','squat','cross','sideL','onetwo','lunge','twist','rope',
+      'hook','sumo','chop','duck','body','calf','kup','shadow'], r:16},
+  {id:'rand',  ico:'🎲', t:'ランダムMIX',     s:'毎回シャッフル。飽きたときはこれ',
+   l:null},
+];
+
+/* ============================================================
+   設定・保存
+============================================================ */
+const DEF = {work:20, rest:10, sets:1, setrest:60, weight:70, voice:true, tips:true, beep:true};
+let S = Object.assign({}, DEF, JSON.parse(localStorage.getItem('bhiit_set')||'{}'));
+const saveSet = ()=>localStorage.setItem('bhiit_set', JSON.stringify(S));
+
+const LIM = {work:[10,60,5], rest:[5,60,5], sets:[1,8,1], setrest:[15,180,15], weight:[35,150,1]};
+const today = ()=>new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+
+function getLog(){ return JSON.parse(localStorage.getItem('bhiit_log')||'[]'); }
+function addLog(rec){ const l=getLog(); l.push(rec); localStorage.setItem('bhiit_log', JSON.stringify(l.slice(-400))); }
+
+function renderStats(){
+  const l = getLog(), t = today();
+  const td = l.filter(x=>x.date===t);
+  document.getElementById('sToday').textContent = td.reduce((a,b)=>a+b.rounds,0);
+  document.getElementById('sMin').textContent = Math.round(td.reduce((a,b)=>a+b.sec,0)/60);
+  // 連続日数
+  const days = [...new Set(l.map(x=>x.date))].sort().reverse();
+  let st=0, cur=new Date();
+  for(const d of days){
+    if(d === cur.toLocaleDateString('sv-SE')){ st++; cur.setDate(cur.getDate()-1); }
+    else break;
+  }
+  document.getElementById('sStreak').textContent = st;
+}
+
+function renderSet(){
+  vWork.textContent    = S.work+'秒';
+  vRest.textContent    = S.rest+'秒';
+  vSets.textContent    = S.sets;
+  vSetrest.textContent = S.setrest+'秒';
+  vWeight.textContent  = S.weight+'kg';
