@@ -1,0 +1,100 @@
+      <div class="step"><button data-k="rest" data-d="-5">−</button><b id="vRest">10秒</b><button data-k="rest" data-d="5">＋</button></div>
+    </div>
+    <div class="row">
+      <div class="lb">セット数<small>8ラウンド＝1セット（4分）</small></div>
+      <div class="step"><button data-k="sets" data-d="-1">−</button><b id="vSets">1</b><button data-k="sets" data-d="1">＋</button></div>
+    </div>
+    <div class="row">
+      <div class="lb">セット間の休憩<small>2セット以上のとき</small></div>
+      <div class="step"><button data-k="setrest" data-d="-15">−</button><b id="vSetrest">60秒</b><button data-k="setrest" data-d="15">＋</button></div>
+    </div>
+    <div class="row">
+      <div class="lb">体重<small>消費カロリーの目安計算に使用</small></div>
+      <div class="step"><button data-k="weight" data-d="-1">−</button><b id="vWeight">70kg</b><button data-k="weight" data-d="1">＋</button></div>
+    </div>
+    <div class="row">
+      <div class="lb">音声ガイド<small>次の種目名を読み上げ</small></div>
+      <button class="sw on" id="swVoice"></button>
+    </div>
+    <div class="row">
+      <div class="lb">やり方も読み上げ<small>休憩中と開始時に、種目のコツを音声で説明</small></div>
+      <button class="sw on" id="swTips"></button>
+    </div>
+    <div class="row">
+      <div class="lb">ビープ音<small>開始・終了の電子音</small></div>
+      <button class="sw on" id="swBeep"></button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>⚠ 練習後にやるときの注意</b>
+    ボクシング練習の後は疲労が溜まっています。フォームが崩れたら回数より休むことを優先してください。<br>
+    ・少しでも痛み（特に肩・腰・膝）が出たら即中止<br>
+    ・ジャンプ系は着地音を立てないくらい柔らかく<br>
+    ・ラウンド間に必ず水分を取る<br>
+    ・終わったら首・肩・股関節を軽くストレッチ
+  </div>
+
+  <div class="note" style="background:rgba(74,168,255,.07);border-color:rgba(74,168,255,.28);color:#cfe2f7">
+    <b style="color:var(--blue)">▶ やり方がわからないとき</b>
+    各種目に「お手本動画を探す」ボタンがあります。押すとYouTubeでその種目の解説動画を検索します。<br>
+    良い動画が見つかったら「＋ 登録」からURLを貼り付けておくと、次からはその動画が直接開きます。<br>
+    トレーニング中に押した場合は自動で一時停止するので、見終わったら「再開する」を押してください。<br>
+    ※このボタンだけはインターネット接続が必要です。登録内容はこの端末のこのブラウザに保存されます。
+  </div>
+</div>
+</div>
+
+<!-- ========== 実行中 ========== -->
+<div id="run">
+  <div class="top">
+    <button class="x" id="btnQuit">✕ やめる</button>
+    <div class="pg" id="pgTxt">-</div>
+  </div>
+  <div class="bar"><i id="pgBar"></i></div>
+
+  <div class="stage">
+    <div class="phase" id="phase">READY</div>
+    <div class="ring">
+      <svg viewBox="0 0 200 200">
+        <circle class="bgc" cx="100" cy="100" r="88"></circle>
+        <circle class="fgc" id="ringFg" cx="100" cy="100" r="88"></circle>
+      </svg>
+      <div class="num" id="num">10</div>
+    </div>
+    <div class="exname" id="exName">準備</div>
+    <div class="exdesc" id="exDesc"></div>
+    <div id="vidBox" style="display:none">
+      <button class="vid big" id="btnVid">▶ お手本動画を探す</button>
+      <button class="vid sub" id="btnVidSet">＋ 登録</button>
+    </div>
+    <div class="nextup" id="nextUp"></div>
+  </div>
+
+  <div class="ctrl">
+    <button id="btnPrev">◀ 戻る</button>
+    <button class="main" id="btnPause">一時停止</button>
+    <button id="btnSkip">スキップ ▶</button>
+  </div>
+</div>
+
+<!-- ========== 完了 ========== -->
+<div id="fin" class="screen">
+<div class="wrap">
+  <div class="done">
+    <div class="big">🔥</div>
+    <h2 id="finTitle">お疲れさまでした！</h2>
+    <p id="finSub"></p>
+    <div class="result">
+      <div><b id="rRound">0</b><span>ラウンド</span></div>
+      <div><b id="rTime">0</b><span>分</span></div>
+      <div><b id="rKcal">0</b><span>kcal目安</span></div>
+    </div>
+    <button class="btn" id="btnAgain">もう一度やる</button>
+    <button class="btn ghost" id="btnHome">ホームに戻る</button>
+    <div class="note" style="text-align:left">
+      <b>💧 クールダウンを忘れずに</b>
+      水分補給 → 首まわし・肩まわし → 股関節と太もも裏を各20秒伸ばす。ここまでが1セットです。
+    </div>
+  </div>
+</div>

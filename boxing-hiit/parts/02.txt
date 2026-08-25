@@ -1,0 +1,100 @@
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 20px;min-height:0}
+.phase{font-size:12px;letter-spacing:.28em;font-weight:700;margin-bottom:8px}
+.ring{position:relative;width:min(70vw,258px);aspect-ratio:1}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
+.ring .bgc{stroke:#232a38}
+.ring .fgc{transition:stroke-dashoffset .1s linear,stroke .3s}
+.ring .num{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-size:min(20vw,74px);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.03em
+}
+.exname{font-size:26px;font-weight:800;text-align:center;margin:18px 0 0;line-height:1.25}
+.exdesc{font-size:13px;color:var(--sub);text-align:center;margin:9px 0 0;line-height:1.65;max-width:340px}
+.nextup{margin-top:14px;font-size:12px;color:var(--sub);text-align:center}
+.nextup b{color:var(--txt);font-weight:600}
+
+.ctrl{display:flex;gap:10px;padding:10px 18px calc(18px + var(--safe-b))}
+.ctrl button{
+  flex:1;border:1px solid var(--line);background:var(--card);color:var(--txt);
+  border-radius:15px;padding:16px 0;font-size:14px;font-weight:700;cursor:pointer
+}
+.ctrl button:active{background:#252c3a}
+.ctrl .main{flex:1.5;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff}
+
+/* ---------- 完了画面 ---------- */
+.done{text-align:center;padding:34px 0 0}
+.done .big{font-size:56px}
+.done h2{font-size:24px;margin:10px 0 4px}
+.done p{color:var(--sub);font-size:13px;margin:0 0 22px}
+.result{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:22px}
+.result div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 6px}
+.result b{display:block;font-size:22px}
+.result span{font-size:10.5px;color:var(--sub)}
+.btn{
+  display:block;width:100%;border:none;border-radius:15px;padding:16px;font-size:15px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;margin-bottom:10px
+}
+.btn.ghost{background:var(--card);color:var(--txt);border:1px solid var(--line)}
+
+/* ---------- 種目一覧モーダル ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:60;display:none;align-items:flex-end}
+.modal.on{display:flex}
+.sheet{
+  background:var(--bg2);width:100%;max-width:520px;margin:0 auto;border-radius:22px 22px 0 0;
+  max-height:88vh;overflow:auto;padding:8px 16px calc(20px + var(--safe-b))
+}
+.grab{width:40px;height:4px;border-radius:3px;background:#3a4353;margin:8px auto 14px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--sub);border-radius:999px;padding:7px 13px;font-size:12px;cursor:pointer}
+.tab.on{background:var(--red);border-color:var(--red);color:#fff}
+.ex{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:8px}
+.ex b{font-size:14px}
+.ex .tg{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:2px 6px;margin-left:7px}
+.ex p{margin:6px 0 0;font-size:12px;color:var(--sub);line-height:1.6}
+
+/* ---------- 動画ボタン ---------- */
+.vid{
+  display:inline-flex;align-items:center;gap:6px;margin-top:9px;cursor:pointer;
+  background:#232a38;border:1px solid var(--line);color:var(--blue);
+  border-radius:999px;padding:6px 13px;font-size:11.5px;font-weight:600
+}
+.vid:active{background:#2e3646}
+.vid.big{margin-top:14px;font-size:13px;padding:9px 18px}
+.vid.sub{color:var(--sub);margin-left:6px}
+.vid.saved{color:var(--green);border-color:rgba(34,211,154,.45)}
+</style>
+</head>
+<body>
+
+<!-- ========== ホーム ========== -->
+<div id="home" class="screen on">
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="g">🥊</div>
+      <div>
+        <h1>BOXER HIIT</h1>
+        <p>20秒トレ / 10秒レスト・立ったままOK</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="sToday">0</b><span>今日のラウンド</span></div>
+    <div class="stat"><b id="sMin">0</b><span>今日の合計(分)</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>連続日数</span></div>
+  </div>
+
+  <div class="h"><h2>PROGRAM</h2><button id="btnList">種目一覧 ▸</button></div>
+  <div class="cards" id="cards"></div>
+
+  <div class="h"><h2>SETTING</h2></div>
+  <div class="set">
+    <div class="row">
+      <div class="lb">トレーニング<small>1ラウンドの運動時間</small></div>
+      <div class="step"><button data-k="work" data-d="-5">−</button><b id="vWork">20秒</b><button data-k="work" data-d="5">＋</button></div>
+    </div>
+    <div class="row">
+      <div class="lb">レスト<small>ラウンド間の休憩</small></div>
